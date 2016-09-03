@@ -1,8 +1,10 @@
 import requests
 import telepot
 from telepot.delegate import per_inline_from_id, create_open, pave_event_space
+from telepot.namedtuple import InlineQueryResultGif
 from yandex_translate import YandexTranslate
 from ConfigParser import ConfigParser
+from pprint import pprint
 
 
 class GifBot(telepot.helper.InlineUserHandler, telepot.helper.AnswererMixin):
@@ -14,27 +16,27 @@ class GifBot(telepot.helper.InlineUserHandler, telepot.helper.AnswererMixin):
         self.translator = init_service(load_key("translate"))
 
     def construct_choice(self, data):
-        return {
-            "type": "gif",
-            "id": data["id"],
-            "gif_url": data["url"],
-            "gif_width": data["width"],
-            "gif_height": data["height"],
-            "thumb_url": data["thumb_url"]
-        }
+        return InlineQueryResultGif(
+            type = "gif",
+            id = data["id"],
+            gif_url = data["url"],
+            gif_width = data["width"],
+            gif_height = data["height"],
+            thumb_url = data["thumb_url"]
+        )
 
     def on_inline_query(self, msg):
         def compute_answer():
             query_id, from_id, query_string = telepot.glance(msg, flavor="inline_query")
             print(self.id, ":", "Inline Query:", query_id, from_id, query_string)
             translated = translate_query(self.translator, query_string)
+            print("Translated query: %s" % translated)
             gifs = get_gifs(translated)
             return map(self.construct_choice, gifs)
 
         self.answerer.answer(msg, compute_answer)
 
     def on_chosen_inline_result(self, msg):
-        from pprint import pprint
         pprint(msg)
         result_id, from_id, query_string = telepot.glance(msg, flavor="chosen_inline_result")
         print(self.id, ":", "Chosen Inline Result:", result_id, from_id, query_string)
