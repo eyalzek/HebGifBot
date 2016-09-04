@@ -16,6 +16,8 @@ class GifBot(telepot.helper.InlineUserHandler, telepot.helper.AnswererMixin):
         self.translator = init_service(load_key("translate"))
 
     def construct_choice(self, data):
+        if not all([data[k] for k in ("id", "url")]):
+            return
         return InlineQueryResultGif(
             type = "gif",
             id = data["id"],
@@ -32,7 +34,7 @@ class GifBot(telepot.helper.InlineUserHandler, telepot.helper.AnswererMixin):
             translated = translate_query(self.translator, query_string)
             print("Translated query: %s" % translated)
             gifs = get_gifs(translated)
-            return map(self.construct_choice, gifs)
+            return filter(None, map(self.construct_choice, gifs))
 
         self.answerer.answer(msg, compute_answer)
 
